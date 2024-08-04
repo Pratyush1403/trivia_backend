@@ -55,22 +55,20 @@ app.post('/api/signup', async (req, res) => {
 
 
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  console.log('Login request received');
   try {
-    const user = await User.findOne({ email });
-    if (!user) {
-      console.log('User not found');
-      return res.status(404).json({ error: 'User not found' });
+    const { email, password } = req.body;
+    console.log('Login request received');
+    if(email && password){
+      const user = await User.findOne({ email, password });
+      if (user) {
+        return res.status(200).json(user);
+      }
+      else{
+        return res.status(201).json({ result: "No User Found" });
+      }
+    }else {
+      return res.status(400).json({ error: "Missing email or password" });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      console.log('Invalid credentials');
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-    const token = jwt.sign({ userId: user._id }, 'YOUR_SECRET_KEY', { expiresIn: '1h' });
-    console.log('User logged in successfully');
-    res.json({ token });
   } catch (error) {
     console.error('Login failed:', error);
     res.status(500).json({ error: 'Login failed' });
