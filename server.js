@@ -52,15 +52,16 @@ app.post('/api/signup', async (req, res) => {
 });
 
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  console.log('Login request received');
+  
 
   try {
+    const { email, password } = req.body;
+    console.log('Login request received');
     if (!email || !password) {
       return res.status(400).json({ error: "Missing email or password" });
     }
 
-    const user = await User.findOne({ email, password });
+    const user = await User.findOne({ email, password }).select("-password");
     if (user) {
       console.log('Login successful');
       return res.status(200).json(user);
