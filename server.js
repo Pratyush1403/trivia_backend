@@ -1,8 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const app = express();
 
 app.use(cors());
@@ -53,21 +51,22 @@ app.post('/api/signup', async (req, res) => {
   }
 });
 
-
 app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  console.log('Login request received');
+
   try {
-    const { email, password } = req.body;
-    console.log('Login request received');
-    if(email && password){
-      const user = await User.findOne({ email, password });
-      if (user) {
-        return res.status(200).json(user);
-      }
-      else{
-        return res.status(201).json({ result: "No User Found" });
-      }
-    }else {
+    if (!email || !password) {
       return res.status(400).json({ error: "Missing email or password" });
+    }
+
+    const user = await User.findOne({ email, password });
+    if (user) {
+      console.log('Login successful');
+      return res.status(200).json(user);
+    } else {
+      console.log('No user found');
+      return res.status(401).json({ error: "Invalid credentials" });
     }
   } catch (error) {
     console.error('Login failed:', error);
@@ -90,22 +89,27 @@ app.get('/api/questions', async (req, res) => {
 });
 
 app.post('/api/submit-score', async (req, res) => {
-  const { token, score } = req.body;
+  const { email, password, score } = req.body;
   console.log('Submit score request received');
+
   try {
-    const decoded = jwt.verify(token, 'YOUR_SECRET_KEY');
-    const user = await User.findById(decoded.userId);
-    user.scores.push({ score, date: new Date() });
-    user.totalScore += score;
-    if (score === 10) {
-      user.perfectScores += 1;
+    const user = await User.findOne({ email, password });
+    if (user) {
+      user.scores.push({ score, date: new Date() });
+      user.totalScore += score;
+      if (score === 10) {
+        user.perfectScores += 1;
+      }
+      if (user.scores.length > 10) {
+        user.scores.shift();
+      }
+      await user.save();
+      console.log('Score submitted successfully');
+      res.json({ message: 'Score submitted successfully' });
+    } else {
+      console.log('No user found');
+      res.status(401).json({ error: "Invalid credentials" });
     }
-    if (user.scores.length > 10) {
-      user.scores.shift();
-    }
-    await user.save();
-    console.log('Score submitted successfully');
-    res.json({ message: 'Score submitted successfully' });
   } catch (error) {
     console.error('Score submission failed:', error);
     res.status(500).json({ error: 'Score submission failed' });
