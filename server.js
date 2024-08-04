@@ -8,7 +8,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://pratyushsharma1404:pratyush@triviaquiz.l9hpazt.mongodb.net/?appName=triviaquiz', {
+mongoose.connect("mongodb+srv://pratyushsharma1404:pratyush@triviaquiz.l9hpazt.mongodb.net/triviaquiz?retryWrites=true&w=majority", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
