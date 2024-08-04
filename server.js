@@ -8,11 +8,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect('mongodb+srv://pratyushsharma1404:kamlanagar@triviaquiz.l9hpazt.mongodb.net/?retryWrites=true&w=majority', {
+mongoose.connect('mongodb+srv://pratyushsharma1404:<password>@triviaquiz.l9hpazt.mongodb.net/?retryWrites=true&w=majority', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-});
-
+})
+  .then(() => console.log('MongoDB connected'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
@@ -26,40 +27,49 @@ const User = mongoose.model('User', userSchema);
 
 app.post('/api/signup', async (req, res) => {
   const { email, password } = req.body;
+  console.log('Signup request received');
   const hashedPassword = await bcrypt.hash(password, 10);
   try {
     const user = new User({ email, password: hashedPassword });
     await user.save();
+    console.log('User created successfully');
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
+    console.error('User creation failed:', error);
     res.status(400).json({ error: 'User creation failed' });
   }
 });
 
-// User login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
+  console.log('Login request received');
   try {
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found');
       return res.status(404).json({ error: 'User not found' });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.log('Invalid credentials');
       return res.status(400).json({ error: 'Invalid credentials' });
     }
     const token = jwt.sign({ userId: user._id }, 'YOUR_SECRET_KEY', { expiresIn: '1h' });
+    console.log('User logged in successfully');
     res.json({ token });
   } catch (error) {
+    console.error('Login failed:', error);
     res.status(500).json({ error: 'Login failed' });
   }
 });
 
 app.get('/api/questions', async (req, res) => {
+  console.log('Fetching trivia questions');
   try {
     const fetch = (await import('node-fetch')).default;
     const response = await fetch('https://opentdb.com/api.php?amount=10&type=multiple');
     const data = await response.json();
+    console.log('Trivia questions fetched successfully');
     res.json(data.results);
   } catch (error) {
     console.error('Error fetching trivia questions:', error);
@@ -67,9 +77,9 @@ app.get('/api/questions', async (req, res) => {
   }
 });
 
-// Submit score
 app.post('/api/submit-score', async (req, res) => {
   const { token, score } = req.body;
+  console.log('Submit score request received');
   try {
     const decoded = jwt.verify(token, 'YOUR_SECRET_KEY');
     const user = await User.findById(decoded.userId);
@@ -82,18 +92,22 @@ app.post('/api/submit-score', async (req, res) => {
       user.scores.shift();
     }
     await user.save();
+    console.log('Score submitted successfully');
     res.json({ message: 'Score submitted successfully' });
   } catch (error) {
+    console.error('Score submission failed:', error);
     res.status(500).json({ error: 'Score submission failed' });
   }
 });
 
-// Leaderboard
 app.get('/api/leaderboard', async (req, res) => {
+  console.log('Fetching leaderboard');
   try {
     const users = await User.find().sort({ totalScore: -1 }).limit(10);
+    console.log('Leaderboard fetched successfully');
     res.json(users);
   } catch (error) {
+    console.error('Failed to fetch leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
