@@ -34,18 +34,25 @@ const User = mongoose.model('User', userSchema);
 
 app.post('/api/signup', async (req, res) => {
   const { email, password } = req.body;
-  console.log('Signup request received');
-  const hashedPassword = await bcrypt.hash(password, 10);
+  console.log('Signup request received with email:', email);
+
   try {
-    const user = new User({ email, password: hashedPassword });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      console.log('User already exists');
+      return res.status(400).json({ error: 'User already exists' });
+    }
+
+    const user = new User({ email, password });
     await user.save();
     console.log('User created successfully');
     res.status(201).json({ message: 'User created successfully' });
   } catch (error) {
     console.error('User creation failed:', error);
-    res.status(400).json({ error: 'User creation failed' });
+    res.status(500).json({ error: 'User creation failed' });
   }
 });
+
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
