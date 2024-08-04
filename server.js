@@ -8,12 +8,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect("mongodb+srv://pratyushsharma1404:pratyush@triviaquiz.l9hpazt.mongodb.net/triviaquiz?retryWrites=true&w=majority", {
+mongoose.connect("mongodb+srv://pratyushsharma1404:pratyush@triviaquiz.l9hpazt.mongodb.net/?appName=triviaquiz", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
-})
-  .then(() => console.log('MongoDB connected'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+  useCreateIndex: true,
+  useFindandModify: true
+}).then(() => {
+    console.log('connection successful');
+}).catch((err) => console.log('no connection'));
 
 const userSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
